@@ -1,8 +1,8 @@
-FROM rocker/r-ver:4.4.1
+FROM ghcr.io/rocker-org/r-ver:4.4.3
 
 # DeGAUSS container metadata
 ENV degauss_name="geocoder"
-ENV degauss_version="3.4.0"
+ENV degauss_version="3.4.1"
 ENV degauss_description="geocodes"
 ENV degauss_argument="valid_geocode_score_threshold [default: 0.5]"
 
@@ -48,10 +48,18 @@ WORKDIR /app
 
 # install required version of renv
 RUN R --quiet -e "install.packages('remotes', repos = c(CRAN = 'https://packagemanager.posit.co/cran/latest'))"
-RUN R --quiet -e "remotes::install_github('rstudio/renv@v1.0.7')"
+RUN R --quiet -e "remotes::install_github('rstudio/renv@v1.1.5')"
+
+# Fix for bit package compilation issue with R 4.5.x
+# The bit package needs R_NO_REMAP to be defined before including R headers
+RUN mkdir -p /root/.R && \
+    echo 'PKG_CFLAGS = -DR_NO_REMAP' > /root/.R/Makevars
 
 COPY renv.lock .
 RUN R --quiet -e "renv::restore(repos = c(CRAN = 'https://packagemanager.posit.co/cran/latest'))"
+
+# Clean up Makevars after installation
+RUN rm -f /root/.R/Makevars
 
 COPY geocode.rb .
 COPY entrypoint.R .
