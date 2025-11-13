@@ -19,9 +19,6 @@ LABEL "org.degauss.version"="${degauss_version}"
 LABEL "org.degauss.description"="${degauss_description}"
 LABEL "org.degauss.argument"="${degauss_argument}"
 
-ADD https://geomarker.s3.amazonaws.com/geocoder_2021.db /opt/geocoder.db
-# COPY geocoder.db /opt/geocoder.db
-
 RUN apt-get update && apt-get install -y \
     libssl-dev \
     libssh2-1-dev \
