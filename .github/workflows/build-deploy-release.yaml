@@ -2,6 +2,9 @@ name: build-deploy-release
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - '*'
 jobs:
   deploy-images:
     runs-on: ubuntu-latest
@@ -20,7 +23,7 @@ jobs:
           container="${{ env.registry }}/${{ env.username }}/${{ env.repository }}:latest"
           echo "container=${container}" >> $GITHUB_ENV
       - name: create release tag variable
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || github.event_name == 'push'
         run: |
           versioned="${{ env.registry }}/${{ env.username }}/${{ env.repository }}:${GITHUB_REF##*/}"
           echo "versioned=${versioned}" >> $GITHUB_ENV
