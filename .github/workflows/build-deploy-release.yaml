@@ -2,13 +2,14 @@ name: build-deploy-release
 on:
   release:
     types: [published]
+  repository_dispatch:
+    types: [release-build, force-rebuild]
 jobs:
   deploy-images:
     runs-on: ubuntu-latest
     env:
       registry: ghcr.io
-      username: ${{ github.repository_owner }}
-      # username: degauss-org
+      username: ${{ github.event.organization.login || github.repository_owner }}
       repository: geocoder
     strategy:
       fail-fast: false
