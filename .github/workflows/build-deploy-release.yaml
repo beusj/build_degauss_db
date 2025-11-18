@@ -20,7 +20,7 @@ jobs:
           container="${{ env.registry }}/${{ env.username }}/${{ env.repository }}:latest"
           echo "container=${container}" >> $GITHUB_ENV
       - name: create release tag variable
-        if: github.event_name == 'release' || github.event_name == 'push'
+        if: github.event_name == 'release'
         run: |
           versioned="${{ env.registry }}/${{ env.username }}/${{ env.repository }}:${GITHUB_REF##*/}"
           echo "versioned=${versioned}" >> $GITHUB_ENV
