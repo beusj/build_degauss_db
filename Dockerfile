@@ -60,7 +60,7 @@ COPY geocode.rb .
 # install entrypoint.R dependencies
 RUN apk add ruby
 RUN gem install Geocoder-US.gem
-RUN R --quiet -e "install.packages(c('cli','digest','dplyr','fs','glue','knitr','magrittr','mappp','ps','purrr','readr','remotes','stringr','tidyr','tidyselect'), repos=c(CRAN='https://packagemanager.posit.co/cran/latest'))"
+RUN R --quiet -e "install.packages(c('digest','knitr','mappp','remotes'), repos=c(CRAN='https://packagemanager.posit.co/cran/latest'))"
 RUN R --quiet -e "remotes::install_github('degauss-org/dht')"
 RUN apk upgrade --no-cache
 
