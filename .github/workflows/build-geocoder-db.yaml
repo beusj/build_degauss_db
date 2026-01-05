@@ -47,10 +47,9 @@ jobs:
         run: |
           docker build \
             --build-arg DATA_YEAR=${DATA_YEAR} \
-            --build-arg AWS_S3_SOURCE="${{ steps.s3src.outputs.source }}" \
+            --build-arg AWS_S3_SOURCE="${AWS_S3_SOURCE}" \
             --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
             --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-            --build-arg AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
             -f ./Dockerfiles/Dockerfile-build-db \
             -t geocoder-db .
 
