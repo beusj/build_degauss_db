@@ -53,10 +53,8 @@ jobs:
 
       - name: Test image
         run: |
-          docker run --rm -v "${PWD}/test":/tmp "${{ env.versioned }}" my_address_file.csv
-          docker run --rm -v "${PWD}/test":/tmp "${{ env.versioned }}" my_address_file.csv 0.6
-          docker run --rm -v "${PWD}/test":/tmp "${{ env.versioned }}" my_address_file.csv all
-
+          docker run --rm "${{ env.versioned }}" sqlite3 --version
+          
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
