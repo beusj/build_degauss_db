@@ -22,3 +22,12 @@ test/tmp*
 /.Rprofile
 
 **/logs/
+
+# data
+**/tiger-data/
+*.zip
+*.tar.gz
+*.sqlite
+*.db
+*.shp
+*.dbf
