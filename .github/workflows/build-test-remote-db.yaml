@@ -8,7 +8,7 @@ on:
           required: true
 
 jobs:
-  deploy-images:
+  build-test-images:
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build image
         run: |
-          docker build --build-arg GEOCODER_S3_LOCATION="${{ github.event.inputs.geo_db }}" -t "${{ env.versioned }}" ./Dockerfiles/Dockerfile-remote-db
+          docker build --build-arg GEOCODER_S3_LOCATION="${{ github.event.inputs.geo_db }}" -t "${{ env.versioned }}" -f ./Dockerfiles/Dockerfile-remote-db ./Dockerfiles
 
       - name: Test image
         run: |
