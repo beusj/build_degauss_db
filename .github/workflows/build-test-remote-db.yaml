@@ -6,6 +6,10 @@ on:
         geo_db:
           description: "Geocoder database to use for testing (e.g., 'latest' or a specific tag). Typically a geocoder.db file hosted online. This should be the full URL or S3 path, including geocoder_2021.db or whatever its name might be."
           required: true
+        docker_file:
+          description: "Path to the Dockerfile to use for building the image."
+          required: false
+          default: "Dockerfiles/Dockerfile-remote-db"
 
 jobs:
   build-test-images:
@@ -43,7 +47,7 @@ jobs:
 
       - name: Build image
         run: |
-          docker build --build-arg GEOCODER_S3_LOCATION="${{ github.event.inputs.geo_db }}" -t "${{ env.versioned }}" -f Dockerfiles/Dockerfile-remote-db .
+          docker build --build-arg GEOCODER_S3_LOCATION="${{ github.event.inputs.geo_db }}" -t "${{ env.versioned }}" -f "${{ github.event.inputs.docker_file }}" .
 
       - name: Test image
         run: |

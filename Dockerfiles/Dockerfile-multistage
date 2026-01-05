@@ -1,0 +1,90 @@
+# Stage 1: Build Ruby gems with C extensions
+FROM ghcr.io/rocker-org/r-ver:4.4.3 AS ruby-builder
+
+RUN apt-get update && apt-get install -y \
+    make \
+    sqlite3 \
+    libsqlite3-dev \
+    flex \
+    ruby-full \
+    bison \
+    pkg-config \
+    && apt-get clean
+
+RUN gem install sqlite3 json Text
+
+WORKDIR /build
+
+COPY Makefile.ruby .
+COPY /src ./src
+COPY /lib ./lib
+COPY /gemspec ./gemspec
+
+RUN make -f Makefile.ruby install \
+    && gem install Geocoder-US-2.0.4.gem
+
+# Stage 2: Build R environment
+FROM ghcr.io/rocker-org/r-ver:4.4.3 AS r-builder
+
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libssh2-1-dev \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    && apt-get clean
+
+WORKDIR /app
+
+RUN R --quiet -e "install.packages('remotes', repos = c(CRAN = 'https://packagemanager.posit.co/cran/latest'))"
+RUN R --quiet -e "remotes::install_github('rstudio/renv@v1.1.5')"
+
+COPY renv.lock .
+RUN R --quiet -e "renv::restore(repos = c(CRAN = 'https://packagemanager.posit.co/cran/latest'))"
+
+# Stage 3: Final runtime image
+FROM ghcr.io/rocker-org/r-ver:4.4.3
+
+# DeGAUSS container metadata
+ENV degauss_name="geocoder"
+ENV degauss_version="3.5.0"
+ENV degauss_description="geocodes"
+ENV degauss_argument="valid_geocode_score_threshold [default: 0.5]"
+
+LABEL "org.degauss.name"="${degauss_name}"
+LABEL "org.degauss.version"="${degauss_version}"
+LABEL "org.degauss.description"="${degauss_description}"
+LABEL "org.degauss.argument"="${degauss_argument}"
+
+# Install only runtime dependencies (no build tools)
+RUN apt-get update && apt-get install -y \
+    libssl3 \
+    libssh2-1 \
+    libcurl4 \
+    libxml2 \
+    sqlite3 \
+    libsqlite3-0 \
+    ruby \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add geocoder database
+ARG GEOCODER_S3_LOCATION
+ENV GEOCODER_S3_LOCATION=${GEOCODER_S3_LOCATION}
+ADD ${GEOCODER_S3_LOCATION} /opt/geocoder.db
+
+# Copy Ruby gems from builder
+COPY --from=ruby-builder /usr/local/bundle /usr/local/bundle
+COPY --from=ruby-builder /usr/lib/ruby/gems /usr/lib/ruby/gems
+
+# Copy R packages from builder
+COPY --from=r-builder /usr/local/lib/R/site-library /usr/local/lib/R/site-library
+
+WORKDIR /app
+
+# Copy application files
+COPY geocode.rb .
+COPY entrypoint.R .
+
+WORKDIR /tmp
+
+ENTRYPOINT ["/app/entrypoint.R"]
