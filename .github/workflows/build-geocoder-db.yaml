@@ -20,7 +20,7 @@ jobs:
     env:
       # Use the provided input, or fallback to default if empty
       DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
-      AWS_S3_SOURCE: ${{ github.event.inputs.aws_s3_source || }}
+      AWS_S3_SOURCE: ${{ github.event.inputs.aws_s3_source || 's3://choa-geocoding/census/tiger_line/2025' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
