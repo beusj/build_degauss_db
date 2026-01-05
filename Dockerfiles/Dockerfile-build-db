@@ -16,8 +16,9 @@ RUN apt-get update && \
     apt-get install -y awscli unzip \
     sqlite3 libsqlite3-dev \ 
     sudo build-essential \ 
-    pkg-config \
-    wget curl git ruby ruby-dev make
+    pkg-config flex \
+    wget curl git ruby ruby-dev \
+    make
 
 RUN gem install sqlite3 json Text
 
