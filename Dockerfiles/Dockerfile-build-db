@@ -27,11 +27,16 @@ COPY Makefile.ruby .
 COPY /src ./src
 COPY /lib ./lib
 COPY /gemspec ./gemspec
+COPY /build ./build
 
 RUN make -f Makefile.ruby install \
     && gem install Geocoder-US-2.0.4.gem
 
-RUN chmod +x build/tiger_import build/build_indexes build/rebuild_cluster bin/rebuild_metaphones
+# debugging 
+RUN find . -name 'tiger_import' -o -name 'build_indexes' -o -name 'rebuild_cluster' -o -name 'rebuild_metaphones'
+RUN ls -lR ./build ./bin || true
+
+RUN chmod +x build/tiger_import build/build_indexes build/rebuild_cluster build/rebuild_metaphones
 
 RUN mkdir -p ./tiger_data/
 RUN aws s3 sync s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/ ./tiger_data/ \
@@ -44,7 +49,7 @@ RUN find ./tiger_data -name "*.zip" -exec unzip -d ./TIGER${DATA_YEAR} {} \;
 
 RUN sudo build/tiger_import /opt/geocoder.db TIGER${DATA_YEAR}
 RUN sudo rm -r TIGER${DATA_YEAR}
-RUN sudo bin/rebuild_metaphones /opt/geocoder.db
+RUN sudo build/rebuild_metaphones /opt/geocoder.db
 RUN sudo chmod +x build/build_indexes && sudo build/build_indexes /opt/geocoder.db
 RUN sudo chmod +x build/rebuild_cluster && sudo build/rebuild_cluster /opt/geocoder.db
 
