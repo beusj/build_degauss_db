@@ -10,12 +10,12 @@ mkdir -p "/workspace/${TIGER_DIR}"
 find /tiger_data -name "*.zip" -exec unzip -d "/workspace/${TIGER_DIR}" {} \;
 
 # Build the database
-sudo build/tiger_import /opt/geocoder.db "/workspace/${TIGER_DIR}"
+sudo build/tiger_import.sh /opt/geocoder.db "/workspace/${TIGER_DIR}"
 
 # Clean up
 sudo rm -r "/workspace/${TIGER_DIR}"
-sudo build/rebuild_metaphones /opt/geocoder.db
-sudo chmod +x build/build_indexes && sudo build/build_indexes /opt/geocoder.db
-sudo chmod +x build/rebuild_cluster && sudo build/rebuild_cluster /opt/geocoder.db
+sudo build/rebuild_metaphones.sh /opt/geocoder.db
+sudo chmod +x build/build_indexes.sh && sudo build/build_indexes.sh /opt/geocoder.db
+sudo chmod +x build/rebuild_cluster.sh && sudo build/rebuild_cluster.sh /opt/geocoder.db
 
 echo "Database build complete: /opt/geocoder.db"

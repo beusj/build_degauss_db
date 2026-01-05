@@ -10,12 +10,13 @@ RUN apt-get update && apt-get install -y tzdata
 RUN dpkg-reconfigure --frontend noninteractive tzdata  # Optional; sets to UTC
 
 RUN apt-get update && \
-    apt-get install -y awscli unzip \
+    apt-get install -y unzip \
     sqlite3 libsqlite3-dev \ 
     sudo build-essential \ 
     pkg-config flex \
     wget curl git ruby ruby-dev \
-    make
+    make \
+    gdal-bin
 
 RUN gem install sqlite3 json Text
 
@@ -29,7 +30,7 @@ COPY /build ./build
 RUN make -f Makefile.ruby install \
     && gem install Geocoder-US-2.0.4.gem
 
-RUN chmod +x build/tiger_import build/build_indexes build/rebuild_cluster build/rebuild_metaphones
+RUN chmod +x build/tiger_import.sh build/build_indexes.sh build/rebuild_cluster.sh build/rebuild_metaphones.sh
 
 COPY entrypoint.sh /workspace/entrypoint.sh
 RUN chmod +x /workspace/entrypoint.sh
