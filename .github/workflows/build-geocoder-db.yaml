@@ -15,6 +15,8 @@ on:
 jobs:
   build-geocoder-db:
     runs-on: ubuntu-latest
+    environment: |
+      choa_s3_read_geocoding
     env:
       # Use the provided input, or fallback to default if empty
       DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
