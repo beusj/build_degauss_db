@@ -20,29 +20,37 @@ jobs:
     env:
       # Use the provided input, or fallback to default if empty
       DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
-      AWS_S3_SOURCE: ${{ github.event.inputs.aws_s3_source }}
+      AWS_S3_SOURCE: ${{ github.event.inputs.aws_s3_source || }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download TIGER/Line data from S3
+      # - name: Download TIGER/Line data from S3
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}  # optional
+      #     DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
+      #   run: |
+      #     mkdir -p ./tiger_data
+      #     aws s3 sync s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/ ./tiger_data/ \
+      #       --exclude "*" \
+      #       --include "*addr.zip" \
+      #       --include "*edges.zip" \
+      #       --include "*featnames.zip"
+
+      - name: Build Docker image
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}  # optional
-          DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
-        run: |
-          mkdir -p ./tiger_data
-          aws s3 sync s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/ ./tiger_data/ \
-            --exclude "*" \
-            --include "*addr.zip" \
-            --include "*edges.zip" \
-            --include "*featnames.zip"
-
-      - name: Build Docker image
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
           docker build \
             --build-arg DATA_YEAR=${DATA_YEAR} \
+            --build-arg AWS_S3_SOURCE="${{ steps.s3src.outputs.source }}" \
+            --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+            --build-arg AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
             -f ./Dockerfiles/Dockerfile-build-db \
             -t geocoder-db .
 
