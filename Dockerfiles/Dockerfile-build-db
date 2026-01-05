@@ -39,15 +39,17 @@ RUN ls -lR ./build ./bin || true
 RUN chmod +x build/tiger_import build/build_indexes build/rebuild_cluster build/rebuild_metaphones
 
 RUN mkdir -p ./tiger_data/
-RUN aws s3 sync s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/ ./tiger_data/ \
-    --exclude "*" \
-    --include "*addr.zip" \
-    --include "*edges.zip" \
-    --include "*featnames.zip"
+
+COPY ./tiger_data ./tiger_data
 
 RUN find ./tiger_data -name "*.zip" -exec unzip -d ./TIGER${DATA_YEAR} {} \;
 
+# remove zip files
+RUN sudo rm -r ./tiger_data
+
 RUN sudo build/tiger_import /opt/geocoder.db TIGER${DATA_YEAR}
+
+# remove unzipped files
 RUN sudo rm -r TIGER${DATA_YEAR}
 RUN sudo build/rebuild_metaphones /opt/geocoder.db
 RUN sudo chmod +x build/build_indexes && sudo build/build_indexes /opt/geocoder.db

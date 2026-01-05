@@ -22,21 +22,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Set AWS_S3_SOURCE default if not provided
-        id: s3src
+
+      - name: Download TIGER/Line data from S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}  # optional
+          DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
         run: |
-          if [ -z "${AWS_S3_SOURCE}" ]; then
-            echo "source=s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/" >> $GITHUB_OUTPUT
-          else
-            echo "source=${AWS_S3_SOURCE}" >> $GITHUB_OUTPUT
-          fi
+          mkdir -p ./tiger_data
+          aws s3 sync s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/ ./tiger_data/ \
+            --exclude "*" \
+            --include "*addr.zip" \
+            --include "*edges.zip" \
+            --include "*featnames.zip"
 
       - name: Build Docker image
         run: |
           docker build \
             --build-arg DATA_YEAR=${DATA_YEAR} \
-            --build-arg AWS_S3_SOURCE="${{ steps.s3src.outputs.source }}" \
             -f ./Dockerfiles/Dockerfile-build-db \
             -t geocoder-db .
 
