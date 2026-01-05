@@ -1,0 +1,63 @@
+name: Build geocoder.db
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_year:
+        description: "TIGER/Line Year"
+        required: false
+        default: "2025"
+      aws_s3_source:
+        description: "AWS S3 path to source shapefile zips"
+        required: false
+        default: ""
+
+jobs:
+  build-geocoder-db:
+    runs-on: ubuntu-latest
+    env:
+      # Use the provided input, or fallback to default if empty
+      DATA_YEAR: ${{ github.event.inputs.data_year || '2025' }}
+      AWS_S3_SOURCE: ${{ github.event.inputs.aws_s3_source }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set AWS_S3_SOURCE default if not provided
+        id: s3src
+        run: |
+          if [ -z "${AWS_S3_SOURCE}" ]; then
+            echo "source=s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/" >> $GITHUB_OUTPUT
+          else
+            echo "source=${AWS_S3_SOURCE}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg DATA_YEAR=${DATA_YEAR} \
+            --build-arg AWS_S3_SOURCE="${{ steps.s3src.outputs.source }}" \
+            -f ./Dockerfiles/Dockerfile-build-db \
+            -t geocoder-db .
+
+      - name: Run Docker container
+        run: |
+          docker run --name geocoder-db-container geocoder-db
+
+      - name: Copy geocoder.db out of container
+        run: docker cp geocoder-db-container:/geocoder.db ./geocoder.db
+
+      - name: Archive geocoder.db as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: geocoder.db
+          path: ./geocoder.db
+
+      # Optional: If you want to push to S3, uncomment and add AWS credentials as secrets
+      # - name: Upload geocoder.db to S3
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_REGION: "us-east-1"
+      #   run: |
+      #     aws s3 cp ./geocoder.db s3://choa-geocoding/census/geocoder.db

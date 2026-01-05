@@ -1,0 +1,54 @@
+# Stage 1: Build env
+FROM debian:12-slim as build
+
+ARG DATA_YEAR=2025
+ARG AWS_S3_SOURCE=s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/
+ENV DATA_YEAR=${DATA_YEAR}
+ENV AWS_S3_SOURCE=${AWS_S3_SOURCE}
+
+# Non-interactive config for tzdata install
+ENV DEBIAN_FRONTEND=noninteractive
+RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+RUN apt-get update && apt-get install -y tzdata
+RUN dpkg-reconfigure --frontend noninteractive tzdata  # Optional; sets to UTC
+
+RUN apt-get update && \
+    apt-get install -y awscli unzip \
+    sqlite3 libsqlite3-dev \ 
+    sudo build-essential \ 
+    pkg-config \
+    wget curl git ruby ruby-dev make
+
+RUN gem install sqlite3 json Text
+
+WORKDIR /workspace
+COPY Makefile.ruby .
+COPY /src ./src
+COPY /lib ./lib
+COPY /gemspec ./gemspec
+
+RUN make -f Makefile.ruby install \
+    && gem install Geocoder-US-2.0.4.gem
+
+RUN chmod +x build/tiger_import build/build_indexes build/rebuild_cluster bin/rebuild_metaphones
+
+RUN mkdir -p ./tiger_data/
+RUN aws s3 sync s3://choa-geocoding/census/tiger_line/${DATA_YEAR}/ ./tiger_data/ \
+    --exclude "*" \
+    --include "*addr.zip" \
+    --include "*edges.zip" \
+    --include "*featnames.zip"
+
+RUN find ./tiger_data -name "*.zip" -exec unzip -d ./TIGER${DATA_YEAR} {} \;
+
+RUN sudo build/tiger_import /opt/geocoder.db TIGER${DATA_YEAR}
+RUN sudo rm -r TIGER${DATA_YEAR}
+RUN sudo bin/rebuild_metaphones /opt/geocoder.db
+RUN sudo chmod +x build/build_indexes && sudo build/build_indexes /opt/geocoder.db
+RUN sudo chmod +x build/rebuild_cluster && sudo build/rebuild_cluster /opt/geocoder.db
+
+# Stage 2: minimal image with only the result
+FROM debian:12-slim as final
+COPY --from=build /opt/geocoder.db /geocoder.db
+
+CMD ["bash"]
