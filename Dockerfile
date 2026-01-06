@@ -33,5 +33,6 @@ RUN make -f Makefile.ruby install \
 RUN chmod +x build/tiger_import.sh build/tiger_import_ogr2ogr.sh build/build_indexes.sh build/rebuild_cluster.sh build/rebuild_metaphones.sh
 
 COPY entrypoint.sh /workspace/entrypoint.sh
-RUN chmod +x /workspace/entrypoint.sh
+COPY test_ogr2ogr.sh /workspace/test_ogr2ogr.sh
+RUN chmod +x /workspace/entrypoint.sh /workspace/test_ogr2ogr.sh
 CMD ["/workspace/entrypoint.sh"]
