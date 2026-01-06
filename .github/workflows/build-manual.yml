@@ -17,7 +17,7 @@ jobs:
     env:
       REGISTRY: ghcr.io
       USERNAME: ${{ github.event.organization.login || github.repository_owner }}
-      REPOSITORY: geocoder
+      REPOSITORY: build_degauss_db
     steps:
       - name: Checkout
         uses: actions/checkout@v4
