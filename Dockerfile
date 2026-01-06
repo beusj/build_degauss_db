@@ -30,7 +30,7 @@ COPY /build ./build
 RUN make -f Makefile.ruby install \
     && gem install Geocoder-US-2.0.4.gem
 
-RUN chmod +x build/tiger_import.sh build/build_indexes.sh build/rebuild_cluster.sh build/rebuild_metaphones.sh
+RUN chmod +x build/tiger_import.sh build/tiger_import_ogr2ogr.sh build/build_indexes.sh build/rebuild_cluster.sh build/rebuild_metaphones.sh
 
 COPY entrypoint.sh /workspace/entrypoint.sh
 RUN chmod +x /workspace/entrypoint.sh
