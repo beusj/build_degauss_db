@@ -17,9 +17,9 @@ shift
 if [ x"$1" != x"" ]; then
     cat
 else
-    # Find all county IDs from the directory structure
-    ls $SOURCE/tl_*_edges.zip 2>/dev/null | while read file; do
-        file=$(basename $file)
+    # Find all county IDs from the directory tree (recursive)
+    find "$SOURCE" -type f -name "tl_*_edges.zip" 2>/dev/null | while read file; do
+        file=$(basename "$file")
         code=${file##tl_????_}
         echo ${code%%_edges.zip}
     done
@@ -30,7 +30,7 @@ fi | sort | while read code; do
     # GDAL's /vsizip/ virtual filesystem allows reading from ZIP without unzipping
     
     for file in $SHPS; do
-        ZIP=$(ls $SOURCE/*_${code}_${file}.zip 2>/dev/null | head -1)
+        ZIP=$(find "$SOURCE" -type f -name "*_${code}_${file}.zip" 2>/dev/null | head -n 1)
         if [ -n "$ZIP" ]; then
             # Find the .shp file inside the ZIP
             SHP_NAME=$(unzip -l "$ZIP" "*.shp" 2>/dev/null | grep -oP '[^ ]+\.shp$' | head -1)
@@ -46,7 +46,7 @@ fi | sort | while read code; do
     
     # For DBF-only files (no geometry), use ogr2ogr without geometry
     for file in $DBFS; do
-        ZIP=$(ls $SOURCE/*_${code}_${file}.zip 2>/dev/null | head -1)
+        ZIP=$(find "$SOURCE" -type f -name "*_${code}_${file}.zip" 2>/dev/null | head -n 1)
         if [ -n "$ZIP" ]; then
             # Find the .dbf file inside the ZIP
             DBF_NAME=$(unzip -l "$ZIP" "*.dbf" 2>/dev/null | grep -oP '[^ ]+\.dbf$' | head -1)
