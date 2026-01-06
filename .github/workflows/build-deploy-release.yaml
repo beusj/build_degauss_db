@@ -4,20 +4,20 @@ on:
     types: [published]
   repository_dispatch:
     types: [release-build, force-rebuild]
+
 jobs:
   deploy-images:
-    environment: geocoder_release_build
     runs-on: ubuntu-latest
     env:
       registry: ghcr.io
       username: ${{ github.event.organization.login || github.repository_owner }}
-      repository: geocoder
-      GEOCODER_S3_LOCATION: ${{ vars.GEOCODER_S3_LOCATION }}
-    strategy:
-      fail-fast: false
+      repository: build_degauss_db
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed to read tags
       - name: create latest tag variable
         run: |
           container="${{ env.registry }}/${{ env.username }}/${{ env.repository }}:latest"
@@ -27,22 +27,23 @@ jobs:
         run: |
           versioned="${{ env.registry }}/${{ env.username }}/${{ env.repository }}:${GITHUB_REF##*/}"
           echo "versioned=${versioned}" >> $GITHUB_ENV
-      - name: build container
+      - name: Build image
         run: |
-          docker build --build-arg GEOCODER_S3_LOCATION="${GEOCODER_S3_LOCATION}" -t ${{ env.container }} .
-      - name: test container
+          docker build -t "${{ env.versioned }}" -t "${{ env.latest }}" .
+
+      - name: Test image
         run: |
-          docker run --rm -v "${PWD}/test":/tmp ${{ env.container }} my_address_file.csv
-          docker run --rm -v "${PWD}/test":/tmp ${{ env.container }} my_address_file.csv 0.6
-          docker run --rm -v "${PWD}/test":/tmp ${{ env.container }} my_address_file.csv all
-      - name: login to ghcr
+          docker run --rm "${{ env.versioned }}" sqlite3 --version
+          
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.registry }}
-          username: ${{ env.username }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.USERNAME }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: deploy release (and latest) container
+
+      - name: Push images
         run: |
-          docker tag ${{ env.container }} ${{ env.versioned }}
+          docker tag  ${{ env.versioned }} ${{ env.versioned }}
           docker push ${{ env.versioned }}
-          docker push ${{ env.container }}
+          docker push ${{ env.latest }}

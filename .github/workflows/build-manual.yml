@@ -1,4 +1,4 @@
-name: Manually Rebuild Docker
+name: build-docker-manual
 
 on:
   workflow_dispatch:
