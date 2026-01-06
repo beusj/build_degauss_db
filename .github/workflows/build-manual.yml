@@ -11,6 +11,9 @@ on:
 jobs:
   deploy-images:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
     env:
       REGISTRY: ghcr.io
       USERNAME: ${{ github.event.organization.login || github.repository_owner }}
