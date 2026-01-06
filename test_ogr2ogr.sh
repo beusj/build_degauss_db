@@ -8,6 +8,7 @@ set -e
 TEST_DB="test_output.db"
 TEST_DATA="tiger_data/01"
 BUILD_DIR="build"
+HELPER_LIB="lib/geocoder/us/sqlite3.so"
 
 echo "================================"
 echo "Testing ogr2ogr TIGER import"
@@ -79,7 +80,8 @@ fi
 
 echo ""
 echo "3. Running ETL transformations..."
-cat "$BUILD_DIR/sql/setup.sql" "$BUILD_DIR/sql/convert.sql" | sqlite3 "$TEST_DB" 2>&1 | head -20
+(echo ".load $HELPER_LIB" && \
+ cat "$BUILD_DIR/sql/setup.sql" "$BUILD_DIR/sql/convert.sql") | sqlite3 "$TEST_DB" 2>&1 | head -20
 
 echo ""
 echo "4. Verifying import results..."
